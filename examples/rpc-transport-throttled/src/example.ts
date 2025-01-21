@@ -94,6 +94,7 @@ function getThrottledTransport<TClusterUrl extends ClusterUrl>(
             } as QueuedRequest<TClusterUrl>);
             if (config.signal) {
                 config.signal.addEventListener('abort', function () {
+                    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                     reject(this.reason);
                 });
             }

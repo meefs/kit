@@ -110,6 +110,7 @@ describe('RPC request coalescer', () => {
                     return await new Promise((resolve, reject) => {
                         transportResponsePromise = resolve;
                         signal?.addEventListener('abort', (e: AbortSignalEventMap['abort']) => {
+                            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                             reject((e.target as AbortSignal).reason);
                         });
                     });
