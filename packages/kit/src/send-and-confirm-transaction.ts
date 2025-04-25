@@ -3,14 +3,15 @@ import type { RpcSubscriptions, SignatureNotificationsApi, SlotNotificationsApi 
 import {
     createBlockHeightExceedencePromiseFactory,
     createRecentSignatureConfirmationPromiseFactory,
+    TransactionWithLastValidBlockHeight,
     waitForRecentTransactionConfirmation,
 } from '@solana/transaction-confirmation';
-import { FullySignedTransaction, TransactionWithBlockhashLifetime } from '@solana/transactions';
+import { FullySignedTransaction } from '@solana/transactions';
 
 import { sendAndConfirmTransactionWithBlockhashLifetime_INTERNAL_ONLY_DO_NOT_EXPORT } from './send-transaction-internal';
 
 type SendAndConfirmTransactionWithBlockhashLifetimeFunction = (
-    transaction: FullySignedTransaction & TransactionWithBlockhashLifetime,
+    transaction: FullySignedTransaction & TransactionWithLastValidBlockHeight,
     config: Omit<
         Parameters<typeof sendAndConfirmTransactionWithBlockhashLifetime_INTERNAL_ONLY_DO_NOT_EXPORT>[0],
         'confirmRecentTransaction' | 'rpc' | 'transaction'

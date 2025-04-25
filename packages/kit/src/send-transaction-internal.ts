@@ -2,13 +2,13 @@ import type { Signature } from '@solana/keys';
 import type { Rpc, SendTransactionApi } from '@solana/rpc';
 import { Commitment, commitmentComparator } from '@solana/rpc-types';
 import {
+    TransactionWithLastValidBlockHeight,
     waitForDurableNonceTransactionConfirmation,
     waitForRecentTransactionConfirmation,
 } from '@solana/transaction-confirmation';
 import {
     FullySignedTransaction,
     getBase64EncodedWireTransaction,
-    TransactionWithBlockhashLifetime,
     TransactionWithDurableNonceLifetime,
 } from '@solana/transactions';
 
@@ -33,7 +33,7 @@ interface SendAndConfirmTransactionWithBlockhashLifetimeConfig
             'getBlockHeightExceedencePromise' | 'getRecentSignatureConfirmationPromise'
         >,
     ) => Promise<void>;
-    transaction: FullySignedTransaction & TransactionWithBlockhashLifetime;
+    transaction: FullySignedTransaction & TransactionWithLastValidBlockHeight;
 }
 
 interface SendTransactionBaseConfig extends SendTransactionConfigWithoutEncoding {
