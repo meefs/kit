@@ -2,6 +2,7 @@ import { getAddressDecoder, getAddressEncoder } from '@solana/addresses';
 import {
     combineCodec,
     type Encoder,
+    transformDecoder,
     type VariableSizeCodec,
     type VariableSizeDecoder,
     type VariableSizeEncoder,
@@ -16,16 +17,13 @@ type AddressTableLookup = ReturnType<typeof getCompiledAddressTableLookups>[numb
 let memoizedAddressTableLookupEncoder: VariableSizeEncoder<AddressTableLookup> | undefined;
 export function getAddressTableLookupEncoder(): VariableSizeEncoder<AddressTableLookup> {
     if (!memoizedAddressTableLookupEncoder) {
+        const indexEncoder = getArrayEncoder(getU8Encoder(), { size: getShortU16Encoder() }) as Encoder<
+            readonly number[]
+        >;
         memoizedAddressTableLookupEncoder = getStructEncoder([
             ['lookupTableAddress', getAddressEncoder()],
-            [
-                'writableIndices',
-                getArrayEncoder(getU8Encoder(), { size: getShortU16Encoder() }) as Encoder<readonly number[]>,
-            ],
-            [
-                'readableIndices',
-                getArrayEncoder(getU8Encoder(), { size: getShortU16Encoder() }) as Encoder<readonly number[]>,
-            ],
+            ['writableIndexes', indexEncoder],
+            ['readonlyIndexes', indexEncoder],
         ]);
     }
 
@@ -35,13 +33,27 @@ export function getAddressTableLookupEncoder(): VariableSizeEncoder<AddressTable
 let memoizedAddressTableLookupDecoder: VariableSizeDecoder<AddressTableLookup> | undefined;
 export function getAddressTableLookupDecoder(): VariableSizeDecoder<AddressTableLookup> {
     if (!memoizedAddressTableLookupDecoder) {
-        memoizedAddressTableLookupDecoder = getStructDecoder([
-            ['lookupTableAddress', getAddressDecoder()],
-            ['writableIndices', getArrayDecoder(getU8Decoder(), { size: getShortU16Decoder() })],
-            ['readableIndices', getArrayDecoder(getU8Decoder(), { size: getShortU16Decoder() })],
-        ]);
+        const indexEncoder = getArrayDecoder(getU8Decoder(), { size: getShortU16Decoder() });
+        // @ts-expect-error Remove when `readableIndices` and `writableIndices` are removed.
+        memoizedAddressTableLookupDecoder = transformDecoder(
+            getStructDecoder([
+                ['lookupTableAddress', getAddressDecoder()],
+                ['writableIndexes', indexEncoder],
+                ['readonlyIndexes', indexEncoder],
+            ]),
+            lookupTable =>
+                'readableIndices' in lookupTable
+                    ? ({
+                          ...lookupTable,
+                          readonlyIndexes: lookupTable.readableIndices,
+                          // @ts-expect-error Remove when `readableIndices` and `writableIndices` are removed.
+                          writableIndexes: lookupTable.writableIndices,
+                      } as AddressTableLookup)
+                    : lookupTable,
+        );
     }
 
+    // @ts-expect-error Remove when `readableIndices` and `writableIndices` are removed.
     return memoizedAddressTableLookupDecoder;
 }
 
