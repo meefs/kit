@@ -33,7 +33,10 @@ type ForbiddenHeaders =
     | 'Expect'
     | 'Host'
     | 'Keep-Alive'
-    | 'Origin'
+    // Similar to `Accept-Encoding`, we don't have a way to target TypeScript types depending on
+    // which platform you are authoring for. `Origin` is therefore omitted from the forbidden
+    // headers type, but is still a runtime error in dev mode when supplied in a browser context.
+    // | 'Origin'
     | 'Permissions-Policy'
     | 'Referer'
     | 'TE'
@@ -64,7 +67,6 @@ const FORBIDDEN_HEADERS: Record<string, boolean> = /* @__PURE__ */ Object.assign
         expect: true,
         host: true,
         'keep-alive': true,
-        origin: true,
         'permissions-policy': true,
         // Prefix matching is implemented in code, below.
         // 'proxy-': true,
@@ -77,6 +79,7 @@ const FORBIDDEN_HEADERS: Record<string, boolean> = /* @__PURE__ */ Object.assign
         via: true,
     },
     __NODEJS__ ? undefined : { 'accept-encoding': true },
+    __BROWSER__ ? { origin: true } : undefined,
 );
 
 export function assertIsAllowedHttpRequestHeaders(
