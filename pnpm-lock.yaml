@@ -219,7 +219,7 @@ importers:
         version: 19.1.9(@types/react@19.1.12)
       '@vitejs/plugin-react-swc':
         specifier: ^4.1.0
-        version: 4.1.0(@swc/helpers@0.5.17)(vite@7.1.7(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1))
+        version: 4.1.0(@swc/helpers@0.5.17)(vite@7.1.8(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1))
       eslint-plugin-react-refresh:
         specifier: ^0.4.20
         version: 0.4.20(eslint@9.35.0(jiti@1.21.7))
@@ -227,8 +227,8 @@ importers:
         specifier: ^16.4.0
         version: 16.4.0
       vite:
-        specifier: ^7.1.7
-        version: 7.1.7(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1)
+        specifier: ^7.1.8
+        version: 7.1.8(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1)
 
   examples/rpc-custom-api:
     dependencies:
@@ -7798,8 +7798,8 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  vite@7.1.7:
-    resolution: {integrity: sha512-VbA8ScMvAISJNJVbRDTJdCwqQoAareR/wutevKanhR2/1EkoXVZVkkORaYm/tNVCjP/UDTKtcw3bAkwOUdedmA==}
+  vite@7.1.8:
+    resolution: {integrity: sha512-oBXvfSHEOL8jF+R9Am7h59Up07kVVGH1NrFGFoEG6bPDZP3tGpQhvkBpy5x7U6+E6wZCu9OihsWgJqDbQIm8LQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -11708,11 +11708,11 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@vitejs/plugin-react-swc@4.1.0(@swc/helpers@0.5.17)(vite@7.1.7(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1))':
+  '@vitejs/plugin-react-swc@4.1.0(@swc/helpers@0.5.17)(vite@7.1.8(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.35
       '@swc/core': 1.13.19(@swc/helpers@0.5.17)
-      vite: 7.1.7(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1)
+      vite: 7.1.8(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1)
     transitivePeerDependencies:
       - '@swc/helpers'
 
@@ -15439,7 +15439,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite@7.1.7(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1):
+  vite@7.1.8(@types/node@24.5.2)(jiti@1.21.7)(terser@5.18.0)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.10
       fdir: 6.5.0(picomatch@4.0.3)
