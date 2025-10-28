@@ -153,8 +153,8 @@ importers:
         specifier: ^0.8.0
         version: 0.8.0(@solana/kit@packages+kit)
       '@solana-program/system':
-        specifier: ^0.8.1
-        version: 0.8.1(@solana/kit@packages+kit)
+        specifier: ^0.9.0
+        version: 0.9.0(@solana/kit@packages+kit)
       '@solana/example-utils':
         specifier: workspace:*
         version: link:../utils
@@ -181,8 +181,8 @@ importers:
         specifier: 3.2.1
         version: 3.2.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@solana-program/system':
-        specifier: ^0.8.1
-        version: 0.8.1(@solana/kit@packages+kit)
+        specifier: ^0.9.0
+        version: 0.9.0(@solana/kit@packages+kit)
       '@solana/kit':
         specifier: workspace:*
         version: link:../../packages/kit
@@ -262,8 +262,8 @@ importers:
   examples/signers:
     dependencies:
       '@solana-program/system':
-        specifier: ^0.8.1
-        version: 0.8.1(@solana/kit@packages+kit)
+        specifier: ^0.9.0
+        version: 0.9.0(@solana/kit@packages+kit)
       '@solana/example-utils':
         specifier: workspace:*
         version: link:../utils
@@ -281,8 +281,8 @@ importers:
   examples/transfer-lamports:
     dependencies:
       '@solana-program/system':
-        specifier: ^0.8.1
-        version: 0.8.1(@solana/kit@packages+kit)
+        specifier: ^0.9.0
+        version: 0.9.0(@solana/kit@packages+kit)
       '@solana/example-utils':
         specifier: workspace:*
         version: link:../utils
@@ -4238,10 +4238,10 @@ packages:
     peerDependencies:
       '@solana/kit': ^3.0
 
-  '@solana-program/system@0.8.1':
-    resolution: {integrity: sha512-71U9Mzdpw8HQtfgfJSL5xKZbLMRnza2Llsfk7gGnmg2waqK+o8MMH4YNma8xXS1UmOBptXIiNvoZ3p7cmOVktg==}
+  '@solana-program/system@0.9.0':
+    resolution: {integrity: sha512-yu+i0SZ+c+0E9Cy+btoMiCbxRnP/FLQuv/Ba8l2klZApAiOX1Ja/2IGkctFV36fglsI7PwD9czkSkHm8og+QeA==}
     peerDependencies:
-      '@solana/kit': ^3.0
+      '@solana/kit': ^4.0
 
   '@solana/buffer-layout@4.0.1':
     resolution: {integrity: sha512-E1ImOIAD1tBZFRdjeM4/pzTiTApC0AOBGwyAMS4fwIodCWArzJ3DWdoh8cKxeFM2fElkxBh2Aqts1BPC373rHA==}
@@ -11153,7 +11153,7 @@ snapshots:
     dependencies:
       '@solana/kit': link:packages/kit
 
-  '@solana-program/system@0.8.1(@solana/kit@packages+kit)':
+  '@solana-program/system@0.9.0(@solana/kit@packages+kit)':
     dependencies:
       '@solana/kit': link:packages/kit
 
