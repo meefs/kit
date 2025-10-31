@@ -42,7 +42,6 @@ export default function InKeepSearchDialog(props: SharedProps) {
             })(),
             privacyPreferences: {
                 optOutAnalyticalCookies: true,
-                optOutAllAnalytics: true,
             },
             transformSource(source) {
                 const detectedTabs: string[] = [];
