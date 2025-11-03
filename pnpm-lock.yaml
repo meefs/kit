@@ -150,8 +150,8 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0(@solana/kit@packages+kit)
       '@solana-program/memo':
-        specifier: ^0.8.0
-        version: 0.8.0(@solana/kit@packages+kit)
+        specifier: ^0.9.0
+        version: 0.9.0(@solana/kit@packages+kit)
       '@solana-program/system':
         specifier: ^0.9.0
         version: 0.9.0(@solana/kit@packages+kit)
@@ -4225,10 +4225,10 @@ packages:
     peerDependencies:
       '@solana/kit': ^4.0
 
-  '@solana-program/memo@0.8.0':
-    resolution: {integrity: sha512-sf70ts2ZY10qQUxu5cLPnNYiBcqxJ07p6g4zk2ALq/Ueg3Y4hNm9XbxzA7GmNquDeDGWmEJJaT2ElOWWS+sa8Q==}
+  '@solana-program/memo@0.9.0':
+    resolution: {integrity: sha512-I544p9gFeaguGbM+U09tjc9Prbs71vh7votxRahEoiOlxVID9NtZTah4KQnL0jK7JboxFxXo4+VOBaIE3HYPOw==}
     peerDependencies:
-      '@solana/kit': ^3.0
+      '@solana/kit': ^4.0
 
   '@solana-program/system@0.9.0':
     resolution: {integrity: sha512-yu+i0SZ+c+0E9Cy+btoMiCbxRnP/FLQuv/Ba8l2klZApAiOX1Ja/2IGkctFV36fglsI7PwD9czkSkHm8og+QeA==}
@@ -11206,7 +11206,7 @@ snapshots:
     dependencies:
       '@solana/kit': link:packages/kit
 
-  '@solana-program/memo@0.8.0(@solana/kit@packages+kit)':
+  '@solana-program/memo@0.9.0(@solana/kit@packages+kit)':
     dependencies:
       '@solana/kit': link:packages/kit
 
