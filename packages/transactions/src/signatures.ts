@@ -1,5 +1,5 @@
 import { Address, getAddressFromPublicKey } from '@solana/addresses';
-import { Decoder } from '@solana/codecs-core';
+import { bytesEqual, Decoder } from '@solana/codecs-core';
 import { getBase58Decoder } from '@solana/codecs-strings';
 import {
     SOLANA_ERROR__TRANSACTION__ADDRESSES_CANNOT_SIGN_TRANSACTION,
@@ -44,10 +44,6 @@ export function getSignatureFromTransaction(transaction: Transaction): Signature
     }
     const transactionSignature = base58Decoder.decode(signatureBytes);
     return transactionSignature as Signature;
-}
-
-function uint8ArraysEqual(arr1: Uint8Array, arr2: Uint8Array) {
-    return arr1.length === arr2.length && arr1.every((value, index) => value === arr2[index]);
 }
 
 /**
@@ -97,7 +93,7 @@ export async function partiallySignTransaction<TTransaction extends Transaction>
 
             const newSignature = await signBytes(keyPair.privateKey, transaction.messageBytes);
 
-            if (existingSignature !== null && uint8ArraysEqual(newSignature, existingSignature)) {
+            if (existingSignature !== null && bytesEqual(newSignature, existingSignature)) {
                 // already have the same signature set
                 return;
             }
