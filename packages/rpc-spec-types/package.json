@@ -73,7 +73,12 @@
         "maintained node versions"
     ],
     "peerDependencies": {
-        "typescript": ">=5.9.3"
+        "typescript": "^5.0.0"
+    },
+    "peerDependenciesMeta": {
+        "typescript": {
+            "optional": true
+        }
     },
     "engines": {
         "node": ">=20.18.0"

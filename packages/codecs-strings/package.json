@@ -84,10 +84,13 @@
     },
     "peerDependencies": {
         "fastestsmallesttextencoderdecoder": "^1.0.22",
-        "typescript": ">=5.9.3"
+        "typescript": "^5.0.0"
     },
     "peerDependenciesMeta": {
         "fastestsmallesttextencoderdecoder": {
+            "optional": true
+        },
+        "typescript": {
             "optional": true
         }
     },
