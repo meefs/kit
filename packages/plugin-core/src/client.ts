@@ -242,3 +242,85 @@ export function extendClient<TClient extends object, TAdditions extends object>(
     Object.defineProperties(result, Object.getOwnPropertyDescriptors(additions));
     return Object.freeze(result) as Omit<TClient, keyof TAdditions> & TAdditions;
 }
+
+/**
+ * Wraps a client with a cleanup function, making it {@link Disposable}.
+ *
+ * Plugin authors can use this to register teardown logic (e.g. closing
+ * connections or clearing timers) that runs when the client is disposed.
+ * If the client already implements `Symbol.dispose`, the existing dispose
+ * logic is chained so that it runs after the new `cleanup` function.
+ *
+ * @typeParam TClient - The type of the original client.
+ * @param client - The client to wrap.
+ * @param cleanup - The cleanup function to run when the client is disposed.
+ * @return A new client that extends `TClient` and implements `Disposable`.
+ *
+ * @example
+ * Register a cleanup function in a plugin that opens a WebSocket connection.
+ * ```ts
+ * function myPlugin() {
+ *     return <T extends object>(client: T) => {
+ *         const socket = new WebSocket('wss://api.example.com');
+ *         return withCleanup(
+ *             extendClient(client, { socket }),
+ *             () => socket.close(),
+ *         );
+ *     };
+ * }
+ *
+ * // Later, when the client is no longer needed:
+ * using client = createEmptyClient().use(myPlugin();
+ * // `socket.close()` is called automatically when `client` goes out of scope.
+ * ```
+ *
+ * @see {@link extendClient}
+ */
+export function withCleanup<TClient extends object>(client: TClient, cleanup: () => void): Disposable & TClient {
+    if (DISPOSABLE_STACK_PROPERTY in client) {
+        return addCleanupToClientWithExistingStack(
+            client as Record<typeof DISPOSABLE_STACK_PROPERTY, DisposableStack> & TClient,
+            cleanup,
+        );
+    } else {
+        return addCleanupToClientWithoutExistingStack(client, cleanup);
+    }
+}
+
+const DISPOSABLE_STACK_PROPERTY = '__PRIVATE__DISPOSABLE_STACK' as const;
+
+function addCleanupToClientWithExistingStack<TClient extends Record<typeof DISPOSABLE_STACK_PROPERTY, DisposableStack>>(
+    client: TClient,
+    cleanup: () => void,
+): Disposable & TClient {
+    // If we already have the stack, add the new cleanup to it
+    client[DISPOSABLE_STACK_PROPERTY].defer(cleanup);
+    // We assume we already added a dispose method when we added the stack
+    return client as Disposable & TClient;
+}
+
+function addCleanupToClientWithoutExistingStack<TClient extends object>(
+    client: TClient,
+    cleanup: () => void,
+): Disposable & TClient {
+    const stack = new DisposableStack();
+
+    // If the client has an existing dispose method but not our stack, we maintain this existing cleanup by deferring it to the new stack
+    if (Symbol.dispose in client) {
+        const existingDispose = (client as Disposable)[Symbol.dispose];
+        stack.defer(() => existingDispose.call(client));
+    }
+
+    // Add the new cleanup to the stack
+    stack.defer(cleanup);
+
+    // We add our stack to the client, and replace any existing dispose method with our stack dispose
+    const additions = {
+        [DISPOSABLE_STACK_PROPERTY]: stack,
+        [Symbol.dispose]() {
+            stack[Symbol.dispose]();
+        },
+    };
+
+    return extendClient(client, additions) as unknown as Disposable & TClient;
+}
