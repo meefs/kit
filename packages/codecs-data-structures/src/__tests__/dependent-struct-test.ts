@@ -1,0 +1,234 @@
+import { Decoder, fixDecoderSize } from '@solana/codecs-core';
+import { getU8Decoder, getU16Decoder, getU32Decoder } from '@solana/codecs-numbers';
+import { getUtf8Decoder } from '@solana/codecs-strings';
+
+import { getArrayDecoder } from '../array';
+import { createDependentStructDecoder } from '../dependent-struct';
+import { b } from './__setup__';
+
+describe('createDependentStructDecoder', () => {
+    const dependentStruct = createDependentStructDecoder;
+    const u8 = getU8Decoder;
+    const u16 = getU16Decoder;
+    const u32 = getU32Decoder;
+
+    it('decodes a struct with only static fields', () => {
+        const decoder = dependentStruct().field('a', u8()).field('b', u16()).build();
+        expect(decoder.decode(b('010200'))).toStrictEqual({ a: 1, b: 2 });
+    });
+
+    it('decodes a struct with a dependent length field', () => {
+        const decoder = dependentStruct()
+            .field('count', u8())
+            .field('items', fields => getArrayDecoder(u32(), { size: fields.count }))
+            .build();
+        expect(decoder.decode(b('02010000000200000000'.slice(0, 18)))).toStrictEqual({
+            count: 2,
+            items: [1, 2],
+        });
+    });
+
+    it('passes only the fields decoded so far to a factory', () => {
+        const seenByFactory: unknown[] = [];
+        const decoder = dependentStruct()
+            .field('first', u8())
+            .field('second', u8())
+            .field('third', fields => {
+                seenByFactory.push({ ...fields });
+                return u8();
+            })
+            .build();
+        decoder.decode(b('010203'));
+        expect(seenByFactory).toStrictEqual([{ first: 1, second: 2 }]);
+    });
+
+    const versioned = dependentStruct()
+        .field('version', u8())
+        .field('payload', fields => (fields.version === 0 ? u16() : u32()))
+        .build();
+
+    it('lets a factory pick the v0 decoder based on a discriminator', () => {
+        expect(versioned.decode(b('000100'))).toStrictEqual({ payload: 1, version: 0 });
+    });
+
+    it('lets a factory pick the v1 decoder based on a discriminator', () => {
+        expect(versioned.decode(b('0101000000'))).toStrictEqual({ payload: 1, version: 1 });
+    });
+
+    it('decodes from a non-zero offset and returns the new offset from `read`', () => {
+        const decoder = dependentStruct()
+            .field('n', u8())
+            .field('xs', fields => getArrayDecoder(u8(), { size: fields.n }))
+            .build();
+        expect(decoder.read(b('ff03010203'), 1)).toStrictEqual([{ n: 3, xs: [1, 2, 3] }, 5]);
+    });
+
+    it('returns an empty record when no fields are added', () => {
+        const decoder = dependentStruct().build();
+        expect(decoder.decode(b(''))).toStrictEqual({});
+    });
+
+    it('preserves declaration order in the decoded object iteration', () => {
+        const decoder = dependentStruct().field('z', u8()).field('a', u8()).field('m', u8()).build();
+        expect(Object.keys(decoder.decode(b('010203')))).toStrictEqual(['z', 'a', 'm']);
+    });
+
+    it('produces a fixed size decoder of size zero when no fields are added', () => {
+        const decoder = dependentStruct().build();
+        expect(decoder).toHaveProperty('fixedSize', 0);
+    });
+
+    it('produces a fixed size decoder summing the field sizes when every field is fixed', () => {
+        const decoder = dependentStruct().field('a', u8()).field('b', u16()).field('c', u32()).build();
+        expect(decoder).toHaveProperty('fixedSize', 1 + 2 + 4);
+    });
+
+    it('drops to a variable size decoder once a variable size field is added', () => {
+        const decoder = dependentStruct().field('a', u8()).field('label', getUtf8Decoder()).field('b', u8()).build();
+        expect(decoder).not.toHaveProperty('fixedSize');
+    });
+
+    it('drops to a variable size decoder once a factory field is added', () => {
+        const decoder = dependentStruct()
+            .field('count', u8())
+            .field('items', fields => getArrayDecoder(u8(), { size: fields.count }))
+            .build();
+        expect(decoder).not.toHaveProperty('fixedSize');
+    });
+
+    it('does not mutate the builder when adding a field', () => {
+        const builderA = dependentStruct().field('a', u8());
+        const builderAB = builderA.field('b', u8());
+        const decoderA = builderA.build() as Decoder<Record<string, number>>;
+        const decoderAB = builderAB.build() as Decoder<Record<string, number>>;
+        expect(Object.keys(decoderA.decode(b('01')))).toStrictEqual(['a']);
+        expect(Object.keys(decoderAB.decode(b('0102')))).toStrictEqual(['a', 'b']);
+    });
+
+    it('builds independent decoders from independent `build` calls', () => {
+        const builder = dependentStruct().field('a', u8());
+        const firstDecoder = builder.build() as Decoder<Record<string, number>>;
+        const secondDecoder = builder.build() as Decoder<Record<string, number>>;
+        expect(firstDecoder).not.toBe(secondDecoder);
+        expect(firstDecoder.decode(b('07'))).toStrictEqual({ a: 7 });
+        expect(secondDecoder.decode(b('09'))).toStrictEqual({ a: 9 });
+    });
+
+    it('composes with other variable size decoders', () => {
+        const decoder = dependentStruct()
+            .field('label', fixDecoderSize(getUtf8Decoder(), 3))
+            .field('count', u8())
+            .field('items', fields => getArrayDecoder(u8(), { size: fields.count }))
+            .build();
+        expect(decoder.decode(b('414243020a0b'))).toStrictEqual({
+            count: 2,
+            items: [10, 11],
+            label: 'ABC',
+        });
+    });
+
+    it('threads decoded values across more than two dependent fields', () => {
+        const decoder = dependentStruct()
+            .field('numStaticAccounts', u8())
+            .field('numInstructions', u8())
+            .field('staticAccounts', fields => getArrayDecoder(u32(), { size: fields.numStaticAccounts }))
+            .field('instructionLengths', fields => getArrayDecoder(u8(), { size: fields.numInstructions }))
+            .build();
+        expect(decoder.decode(b('020201000000020000000305'))).toStrictEqual({
+            instructionLengths: [3, 5],
+            numInstructions: 2,
+            numStaticAccounts: 2,
+            staticAccounts: [1, 2],
+        });
+    });
+
+    it('lets a factory return a dependent struct decoder, allowing nested dependence', () => {
+        const inner = dependentStruct()
+            .field('innerCount', u8())
+            .field('innerItems', fields => getArrayDecoder(u8(), { size: fields.innerCount }))
+            .build();
+        const outer = dependentStruct()
+            .field('tag', u8())
+            .field('inner', () => inner)
+            .build();
+        expect(outer.decode(b('ff020a0b'))).toStrictEqual({
+            inner: { innerCount: 2, innerItems: [10, 11] },
+            tag: 255,
+        });
+    });
+
+    it('invokes each factory exactly once per `decode` call', () => {
+        const factoryCalls: string[] = [];
+        const decoder = dependentStruct()
+            .field('count', u8())
+            .field('items', fields => {
+                factoryCalls.push(`items(count=${fields.count})`);
+                return getArrayDecoder(u8(), { size: fields.count });
+            })
+            .build();
+        decoder.decode(b('020a0b'));
+        decoder.decode(b('010c'));
+        expect(factoryCalls).toStrictEqual(['items(count=2)', 'items(count=1)']);
+    });
+
+    it('passes a frozen snapshot to a factory', () => {
+        let frozenFlag: boolean | undefined;
+        let mutationThrew = false;
+        const decoder = dependentStruct()
+            .field('a', u8())
+            .field('b', fields => {
+                frozenFlag = Object.isFrozen(fields);
+                try {
+                    (fields as { a: number }).a = 999;
+                } catch {
+                    mutationThrew = true;
+                }
+                return u8();
+            })
+            .build();
+        decoder.decode(b('0102'));
+        expect(frozenFlag).toBe(true);
+        expect(mutationThrew).toBe(true);
+    });
+
+    it('exposes the same snapshot to a factory that the decoded object will contain', () => {
+        let snapshotSeenByFactory: unknown;
+        const decoder = dependentStruct()
+            .field('a', u8())
+            .field('b', u16())
+            .field('c', fields => {
+                snapshotSeenByFactory = { ...fields };
+                return u8();
+            })
+            .build();
+        const result = decoder.decode(b('01020003'));
+        expect(snapshotSeenByFactory).toStrictEqual({ a: result.a, b: result.b });
+    });
+
+    it('propagates the underlying decoder error when a dependent decoder runs past the buffer', () => {
+        const decoder = dependentStruct()
+            .field('count', u8())
+            .field('items', fields => getArrayDecoder(u32(), { size: fields.count }))
+            .build();
+        // Claims four u32 items but only provides bytes for one.
+        expect(() => decoder.decode(b('0401000000'))).toThrow();
+    });
+
+    it('models a v0 transaction message header style struct with three dependent counts', () => {
+        const header = dependentStruct()
+            .field('numRequiredSignatures', u8())
+            .field('numReadonlySignedAccounts', u8())
+            .field('numReadonlyUnsignedAccounts', u8())
+            .field('numAccounts', u8())
+            .field('accounts', fields => getArrayDecoder(fixDecoderSize(u8(), 1), { size: fields.numAccounts }))
+            .build();
+        const bytes = b('01010103aabbcc');
+        expect(header.decode(bytes)).toStrictEqual({
+            accounts: [0xaa, 0xbb, 0xcc],
+            numAccounts: 3,
+            numReadonlySignedAccounts: 1,
+            numReadonlyUnsignedAccounts: 1,
+            numRequiredSignatures: 1,
+        });
+    });
+});
