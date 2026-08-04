@@ -1,23 +1,15 @@
 import './index.css';
 import '@radix-ui/themes/styles.css';
 
-import { Flex, Section, Theme } from '@radix-ui/themes';
-import { SelectedWalletAccountContextProvider } from '@solana/react';
-import type { UiWallet } from '@wallet-standard/react';
+import { Flex, Theme } from '@radix-ui/themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { GatedRoot } from './components/GatedRoot.tsx';
 import { Nav } from './components/Nav.tsx';
 import { ChainContextProvider } from './context/ChainContextProvider.tsx';
 import { RpcContextProvider } from './context/RpcContextProvider.tsx';
-import Root from './routes/root.tsx';
-
-const STORAGE_KEY = 'solana-wallet-standard-example-react:selected-wallet-and-address';
-const stateSync = {
-    deleteSelectedWallet: () => localStorage.removeItem(STORAGE_KEY),
-    getSelectedWallet: () => localStorage.getItem(STORAGE_KEY),
-    storeSelectedWallet: (accountKey: string) => localStorage.setItem(STORAGE_KEY, accountKey),
-};
+import { WalletClientProvider } from './context/WalletClientProvider.tsx';
 
 const rootNode = document.getElementById('root')!;
 const root = createRoot(rootNode);
@@ -25,16 +17,14 @@ root.render(
     <StrictMode>
         <Theme>
             <ChainContextProvider>
-                <SelectedWalletAccountContextProvider filterWallets={(_: UiWallet) => true} stateSync={stateSync}>
-                    <RpcContextProvider>
+                <RpcContextProvider>
+                    <WalletClientProvider>
                         <Flex direction="column">
                             <Nav />
-                            <Section>
-                                <Root />
-                            </Section>
+                            <GatedRoot />
                         </Flex>
-                    </RpcContextProvider>
-                </SelectedWalletAccountContextProvider>
+                    </WalletClientProvider>
+                </RpcContextProvider>
             </ChainContextProvider>
         </Theme>
     </StrictMode>,

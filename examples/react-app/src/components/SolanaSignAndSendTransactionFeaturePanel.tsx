@@ -10,25 +10,30 @@ import {
     setTransactionMessageLifetimeUsingBlockhash,
     signAndSendTransactionMessageWithSigners,
 } from '@solana/kit';
-import { useAction, useWalletAccountTransactionSendingSigner } from '@solana/react';
+import type { WalletSigner } from '@solana/kit-plugin-wallet';
+import { useWallets } from '@solana/kit-plugin-wallet/react';
+import { useAction, useClient } from '@solana/react';
 import { getTransferSolInstruction } from '@solana-program/system';
-import { getUiWalletAccountStorageKey, type UiWalletAccount, useWallets } from '@wallet-standard/react';
+import { getUiWalletAccountStorageKey } from '@wallet-standard/ui';
 import type { SyntheticEvent } from 'react';
 import { useContext, useId, useMemo, useState } from 'react';
 
 import { ChainContext } from '../context/ChainContext';
 import { RpcContext } from '../context/RpcContext';
+import type { AppClient } from '../context/WalletClientProvider';
 import { solStringToLamports } from '../lamports';
+import { assertCanSignAndSendTransactions } from '../walletCapability';
 import { ErrorDialog } from './ErrorDialog';
 import { WalletMenuItemContent } from './WalletMenuItemContent';
 
 type Props = Readonly<{
-    account: UiWalletAccount;
+    signer: WalletSigner | null;
 }>;
 
-export function SolanaSignAndSendTransactionFeaturePanel({ account }: Props) {
+export function SolanaSignAndSendTransactionFeaturePanel({ signer }: Props) {
     const { rpc } = useContext(RpcContext);
-    const wallets = useWallets();
+    const client = useClient<AppClient>();
+    const wallets = useWallets(client);
     const [solQuantityString, setSolQuantityString] = useState<string>('');
     const [recipientAccountStorageKey, setRecipientAccountStorageKey] = useState<string | undefined>();
     const recipientAccount = useMemo(() => {
@@ -43,9 +48,13 @@ export function SolanaSignAndSendTransactionFeaturePanel({ account }: Props) {
         }
     }, [recipientAccountStorageKey, wallets]);
     const { chain: currentChain, solanaExplorerClusterName } = useContext(ChainContext);
-    const transactionSendingSigner = useWalletAccountTransactionSendingSigner(account, currentChain);
     const lamportsInputId = useId();
     const recipientSelectId = useId();
+
+    // Render-time capability guard: throws so the surrounding `ErrorBoundary` renders
+    // `FeatureNotSupportedCallout` when the connected account can't sign and send transaction
+    // it also narrows `signer` for the `useAction` below
+    assertCanSignAndSendTransactions(signer);
 
     const {
         data: lastSignature,
@@ -63,14 +72,14 @@ export function SolanaSignAndSendTransactionFeaturePanel({ account }: Props) {
             .send({ abortSignal: signal });
         const message = pipe(
             createTransactionMessage({ version: 0 }),
-            m => setTransactionMessageFeePayerSigner(transactionSendingSigner, m),
+            m => setTransactionMessageFeePayerSigner(signer, m),
             m => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
             m =>
                 appendTransactionMessageInstruction(
                     getTransferSolInstruction({
                         amount,
                         destination: address(recipientAccount.address),
-                        source: transactionSendingSigner,
+                        source: signer,
                     }),
                     m,
                 ),

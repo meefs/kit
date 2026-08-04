@@ -1,4 +1,5 @@
 import { Badge, Box, DropdownMenu, Flex, Heading } from '@radix-ui/themes';
+import type { SolanaChain } from '@solana/wallet-standard-chains';
 import { useContext } from 'react';
 
 import { ChainContext } from '../context/ChainContext';
@@ -33,7 +34,7 @@ export function Nav() {
                                 <DropdownMenu.Content>
                                     <DropdownMenu.RadioGroup
                                         onValueChange={value => {
-                                            setChain(value as 'solana:${string}');
+                                            setChain(value as SolanaChain);
                                         }}
                                         value={chain}
                                     >

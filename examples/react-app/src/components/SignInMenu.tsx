@@ -1,14 +1,14 @@
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Button, Callout, DropdownMenu } from '@radix-ui/themes';
-import { useSelectedWalletAccount } from '@solana/react';
+import { useIsWalletReady, useWallets } from '@solana/kit-plugin-wallet/react';
+import { useClient } from '@solana/react';
 import { SolanaSignIn } from '@solana/wallet-standard-features';
-import type { UiWallet } from '@wallet-standard/react';
+import type { UiWallet } from '@wallet-standard/ui';
 import { useRef, useState } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 
+import type { AppClient } from '../context/WalletClientProvider';
 import { ErrorDialog } from './ErrorDialog';
 import { SignInMenuItem } from './SignInMenuItem';
-import { UnconnectableWalletMenuItem } from './UnconnectableWalletMenuItem';
 
 type Props = Readonly<{
     children: React.ReactNode;
@@ -16,24 +16,19 @@ type Props = Readonly<{
 
 export function SignInMenu({ children }: Props) {
     const { current: NO_ERROR } = useRef(Symbol());
-    const [, setSelectedWalletAccount, wallets] = useSelectedWalletAccount();
+    const client = useClient<AppClient>();
+    const wallets = useWallets(client);
+    const isReady = useIsWalletReady(client);
     const [error, setError] = useState(NO_ERROR);
     const [forceClose, setForceClose] = useState(false);
     function renderItem(wallet: UiWallet) {
         return (
-            <ErrorBoundary
-                fallbackRender={({ error }) => <UnconnectableWalletMenuItem error={error} wallet={wallet} />}
+            <SignInMenuItem
                 key={`wallet:${wallet.name}`}
-            >
-                <SignInMenuItem
-                    onSignIn={account => {
-                        setSelectedWalletAccount(account);
-                        setForceClose(true);
-                    }}
-                    onError={setError}
-                    wallet={wallet}
-                />
-            </ErrorBoundary>
+                onSignIn={() => setForceClose(true)}
+                onError={setError}
+                wallet={wallet}
+            />
         );
     }
     const walletsThatSupportSignInWithSolana = [];
@@ -46,7 +41,15 @@ export function SignInMenu({ children }: Props) {
         <>
             <DropdownMenu.Root open={forceClose ? false : undefined} onOpenChange={setForceClose.bind(null, false)}>
                 <DropdownMenu.Trigger>
-                    <Button>
+                    <Button
+                        aria-busy={!isReady}
+                        disabled={!isReady}
+                        style={{
+                            opacity: isReady ? undefined : 0.5,
+                            pointerEvents: isReady ? undefined : 'none',
+                            transition: 'opacity 150ms',
+                        }}
+                    >
                         {children}
                         <DropdownMenu.TriggerIcon />
                     </Button>
