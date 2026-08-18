@@ -1,7 +1,10 @@
 import { SOLANA_ERROR__JSON_RPC__PARSE_ERROR, SolanaError } from '@solana/errors';
 import { RpcRequest } from '@solana/rpc-spec-types';
 
-import { getDefaultResponseTransformerForSolanaRpc } from '../response-transformer';
+import {
+    getDefaultResponseTransformerForSolanaRpc,
+    getDefaultResponseTransformerForSolanaRpcSubscriptions,
+} from '../response-transformer';
 import { KEYPATH_WILDCARD } from '../tree-traversal';
 
 describe('getDefaultResponseTransformerForSolanaRpc', () => {
@@ -65,5 +68,22 @@ describe('getDefaultResponseTransformerForSolanaRpc', () => {
                 new SolanaError(SOLANA_ERROR__JSON_RPC__PARSE_ERROR, { __serverMessage: 'o no' }),
             );
         });
+    });
+});
+
+describe('getDefaultResponseTransformerForSolanaRpcSubscriptions', () => {
+    it('looks up the allow-list using the Notifications API name when given a Subscribe request', () => {
+        const transformer = getDefaultResponseTransformerForSolanaRpcSubscriptions({
+            allowedNumericKeyPaths: { blockNotifications: [['version']] },
+        });
+        const request = { methodName: 'blockSubscribe', params: [] } as RpcRequest;
+        expect(transformer({ slot: 1, version: 0 }, request)).toStrictEqual({ slot: 1n, version: 0 });
+    });
+    it('looks up the allow-list using the Notifications API name when given a wire Notification method', () => {
+        const transformer = getDefaultResponseTransformerForSolanaRpcSubscriptions({
+            allowedNumericKeyPaths: { blockNotifications: [['version']] },
+        });
+        const request = { methodName: 'blockNotification', params: [] } as RpcRequest;
+        expect(transformer({ slot: 1, version: 0 }, request)).toStrictEqual({ slot: 1n, version: 0 });
     });
 });
