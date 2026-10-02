@@ -19,6 +19,7 @@ import { getU32Decoder, getU32Encoder, NumberCodec, NumberDecoder, NumberEncoder
 import {
     SOLANA_ERROR__CODECS__SENTINEL_MISSING_AT_END_OF_BYTES,
     SOLANA_ERROR__CODECS__SENTINEL_MUST_NOT_BE_EMPTY,
+    SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY,
     SolanaError,
 } from '@solana/errors';
 
@@ -193,7 +194,9 @@ export function getArrayEncoder<TFrom>(
 ): Encoder<TFrom[]> {
     const size = config.size ?? getU32Encoder();
     assertValidSize(size);
-    const fixedSize = computeArrayLikeCodecSize(size, getFixedSize(item));
+    const itemSize = getFixedSize(item);
+    assertItemCodecSupportsSizeStrategy(config.description ?? 'array', size, itemSize);
+    const fixedSize = computeArrayLikeCodecSize(size, itemSize);
     const maxSize = computeArrayLikeCodecSize(size, getMaxSize(item)) ?? undefined;
 
     return createEncoder({
@@ -274,6 +277,7 @@ export function getArrayDecoder<TTo>(item: Decoder<TTo>, config: ArrayCodecConfi
     const size = config.size ?? getU32Decoder();
     assertValidSize(size);
     const itemSize = getFixedSize(item);
+    assertItemCodecSupportsSizeStrategy(config.description ?? 'array', size, itemSize);
     const fixedSize = computeArrayLikeCodecSize(size, itemSize);
     const maxSize = computeArrayLikeCodecSize(size, getMaxSize(item)) ?? undefined;
 
@@ -470,6 +474,24 @@ function isSentinelSize(size: unknown): size is ArrayLikeCodecSentinelSize {
 function assertValidSize(size: number | object | 'remainder'): void {
     if (isSentinelSize(size) && size.sentinel.length === 0) {
         throw new SolanaError(SOLANA_ERROR__CODECS__SENTINEL_MUST_NOT_BE_EMPTY);
+    }
+}
+
+/**
+ * Throws if a zero-byte item codec is used with a size strategy that relies on items consuming
+ * bytes to make progress, such as the sentinel and remainder strategies.
+ */
+function assertItemCodecSupportsSizeStrategy(
+    codecDescription: string,
+    size: number | object | 'remainder',
+    itemFixedSize: number | null,
+): void {
+    if (itemFixedSize !== 0) return;
+    if (size === 'remainder' || isSentinelSize(size)) {
+        throw new SolanaError(SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY, {
+            codecDescription,
+            sizeStrategy: size === 'remainder' ? 'remainder' : 'sentinel',
+        });
     }
 }
 

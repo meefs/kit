@@ -7,10 +7,12 @@ import {
     SOLANA_ERROR__CODECS__INVALID_NUMBER_OF_ITEMS,
     SOLANA_ERROR__CODECS__SENTINEL_MISSING_AT_END_OF_BYTES,
     SOLANA_ERROR__CODECS__SENTINEL_MUST_NOT_BE_EMPTY,
+    SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY,
     SolanaError,
 } from '@solana/errors';
 
 import { getArrayCodec, getArrayDecoder, getArrayEncoder } from '../array';
+import { getStructCodec } from '../struct';
 import { b } from './__setup__';
 
 describe('getArrayCodec', () => {
@@ -232,6 +234,52 @@ describe('getArrayCodec', () => {
         // With a sentinel no wider than the item, the same tail decodes correctly.
         const safe = { __kind: 'sentinel', sentinel: b('ff'), strategy: 'optional' } as const;
         expect(array(u8(), { size: safe }).read(b('01022a'), 0)).toStrictEqual([[1, 2, 42], 3]);
+    });
+
+    it('rejects a zero-byte item codec under a sentinel size strategy', () => {
+        // A zero-byte item codec can never advance past a sentinel boundary, so decoding would
+        // otherwise loop forever growing the array. Both the encoder and the decoder reject it.
+        const sentinel = { __kind: 'sentinel', sentinel: b('00') } as const;
+        const zeroByteItem = getStructCodec([]);
+        expect(() => getArrayEncoder(zeroByteItem, { size: sentinel })).toThrow(
+            new SolanaError(SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY, {
+                codecDescription: 'array',
+                sizeStrategy: 'sentinel',
+            }),
+        );
+        expect(() => getArrayDecoder(zeroByteItem, { size: sentinel })).toThrow(
+            new SolanaError(SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY, {
+                codecDescription: 'array',
+                sizeStrategy: 'sentinel',
+            }),
+        );
+    });
+
+    it('rejects a zero-byte item codec under a remainder size strategy', () => {
+        // The remainder loop only stops at the end of the byte array, which a zero-byte item codec
+        // can never reach. Both the encoder and the decoder reject it.
+        const zeroByteItem = getStructCodec([]);
+        expect(() => getArrayEncoder(zeroByteItem, { size: 'remainder' })).toThrow(
+            new SolanaError(SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY, {
+                codecDescription: 'array',
+                sizeStrategy: 'remainder',
+            }),
+        );
+        expect(() => getArrayDecoder(zeroByteItem, { size: 'remainder' })).toThrow(
+            new SolanaError(SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY, {
+                codecDescription: 'array',
+                sizeStrategy: 'remainder',
+            }),
+        );
+    });
+
+    it('allows zero-byte item codecs when the size is explicit', () => {
+        // Zero-byte items are only rejected under the sentinel and remainder strategies, since
+        // those are the only strategies that rely on items consuming bytes to make progress.
+        const zeroByteItem = getStructCodec([]);
+        expect(getArrayCodec(zeroByteItem, { size: 3 }).encode([{}, {}, {}])).toStrictEqual(b(''));
+        expect(getArrayCodec(zeroByteItem, { size: 3 }).read(b(''), 0)).toStrictEqual([[{}, {}, {}], 0]);
+        expect(getArrayCodec(zeroByteItem).read(b('01000000'), 0)).toStrictEqual([[{}], 4]);
     });
 
     it('offsets the size of the array', () => {

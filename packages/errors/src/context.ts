@@ -44,6 +44,7 @@ import {
     SOLANA_ERROR__CODECS__OFFSET_OUT_OF_RANGE,
     SOLANA_ERROR__CODECS__SENTINEL_MISSING_AT_END_OF_BYTES,
     SOLANA_ERROR__CODECS__SENTINEL_MISSING_IN_DECODED_BYTES,
+    SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY,
     SOLANA_ERROR__CODECS__UNION_VARIANT_OUT_OF_RANGE,
     SOLANA_ERROR__FAILED_TO_SEND_TRANSACTION,
     SOLANA_ERROR__FAILED_TO_SEND_TRANSACTIONS,
@@ -484,6 +485,10 @@ export type SolanaErrorContext = ReadonlyContextValue<
                 hexDecodedBytes: string;
                 hexSentinel: string;
                 sentinel: ReadonlyUint8Array;
+            };
+            [SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY]: {
+                codecDescription: string;
+                sizeStrategy: 'remainder' | 'sentinel';
             };
             [SOLANA_ERROR__CODECS__UNION_VARIANT_OUT_OF_RANGE]: {
                 maxRange: number;

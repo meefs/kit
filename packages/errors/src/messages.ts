@@ -55,6 +55,7 @@ import {
     SOLANA_ERROR__CODECS__SENTINEL_MISSING_AT_END_OF_BYTES,
     SOLANA_ERROR__CODECS__SENTINEL_MISSING_IN_DECODED_BYTES,
     SOLANA_ERROR__CODECS__SENTINEL_MUST_NOT_BE_EMPTY,
+    SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY,
     SOLANA_ERROR__CODECS__UNION_VARIANT_OUT_OF_RANGE,
     SOLANA_ERROR__CRYPTO__RANDOM_VALUES_FUNCTION_UNIMPLEMENTED,
     SOLANA_ERROR__FAILED_TO_SEND_TRANSACTION,
@@ -429,6 +430,8 @@ export const SolanaErrorMessages: Readonly<{
     [SOLANA_ERROR__CODECS__SENTINEL_MISSING_IN_DECODED_BYTES]:
         'Expected sentinel [$hexSentinel] to be present in decoded bytes [$hexDecodedBytes].',
     [SOLANA_ERROR__CODECS__SENTINEL_MUST_NOT_BE_EMPTY]: 'The sentinel must not be empty.',
+    [SOLANA_ERROR__CODECS__UNEXPECTED_ZERO_FIXED_SIZE_ITEM_FOR_ARRAY_LIKE_SIZE_STRATEGY]:
+        'Codec [$codecDescription] cannot use the [$sizeStrategy] size strategy: the item codec has a fixed size of zero and consumes no bytes.',
     [SOLANA_ERROR__CODECS__UNION_VARIANT_OUT_OF_RANGE]:
         'Union variant out of range. Expected an index between $minRange and $maxRange, got $variant.',
     [SOLANA_ERROR__CODECS__EXPECTED_DECODER_TO_CONSUME_ENTIRE_BYTE_ARRAY]:
