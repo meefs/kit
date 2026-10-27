@@ -267,6 +267,106 @@ describe('decodeTransactionFromRpcResponse', () => {
         expect(result.transaction).toBeUndefined();
     });
 
+    it('synthesizes an empty v1 config for a JSON (v1) response without `transactionConfig`', () => {
+        const rpcTx = {
+            meta: null,
+            transaction: {
+                message: {
+                    accountKeys: ['11111111111111111111111111111112' as Address],
+                    header: {
+                        numReadonlySignedAccounts: 0,
+                        numReadonlyUnsignedAccounts: 0,
+                        numRequiredSignatures: 1,
+                    },
+                    instructions: [],
+                    recentBlockhash: '11111111111111111111111111111111',
+                },
+                signatures: [],
+            },
+            version: 1,
+        } as unknown as GetTransactionApiResponseJson<1>;
+        const v1 = decodeTransactionFromRpcResponse(rpcTx).compiledMessage as Extract<
+            ReturnType<typeof decodeTransactionFromRpcResponse>['compiledMessage'],
+            { version: 1 }
+        >;
+
+        expect(v1.configMask).toBe(0);
+        expect(v1.configValues).toStrictEqual([]);
+    });
+
+    it('decodes the `transactionConfig` of a JSON (v1) response into a config mask and values', () => {
+        const rpcTx = {
+            meta: null,
+            transaction: {
+                message: {
+                    accountKeys: ['11111111111111111111111111111112' as Address],
+                    header: {
+                        numReadonlySignedAccounts: 0,
+                        numReadonlyUnsignedAccounts: 0,
+                        numRequiredSignatures: 1,
+                    },
+                    instructions: [],
+                    recentBlockhash: '11111111111111111111111111111111',
+                    transactionConfig: {
+                        computeUnitLimit: 200_000,
+                        heapSize: null,
+                        loadedAccountsDataSizeLimit: 67_108_864,
+                        priorityFee: 5_000n,
+                    },
+                },
+                signatures: [],
+            },
+            version: 1,
+        } as unknown as GetTransactionApiResponseJson<1>;
+        const v1 = decodeTransactionFromRpcResponse(rpcTx).compiledMessage as Extract<
+            ReturnType<typeof decodeTransactionFromRpcResponse>['compiledMessage'],
+            { version: 1 }
+        >;
+
+        expect(v1.configMask).toBe(0b1111);
+        expect(v1.configValues).toStrictEqual([
+            { kind: 'u64', value: 5_000n },
+            { kind: 'u32', value: 200_000 },
+            { kind: 'u32', value: 67_108_864 },
+        ]);
+    });
+
+    it('sets the config mask bits for zero-valued `transactionConfig` fields of a JSON (v1) response', () => {
+        const rpcTx = {
+            meta: null,
+            transaction: {
+                message: {
+                    accountKeys: ['11111111111111111111111111111112' as Address],
+                    header: {
+                        numReadonlySignedAccounts: 0,
+                        numReadonlyUnsignedAccounts: 0,
+                        numRequiredSignatures: 1,
+                    },
+                    instructions: [],
+                    recentBlockhash: '11111111111111111111111111111111',
+                    transactionConfig: {
+                        computeUnitLimit: 0,
+                        heapSize: null,
+                        loadedAccountsDataSizeLimit: null,
+                        priorityFee: 0n,
+                    },
+                },
+                signatures: [],
+            },
+            version: 1,
+        } as unknown as GetTransactionApiResponseJson<1>;
+        const v1 = decodeTransactionFromRpcResponse(rpcTx).compiledMessage as Extract<
+            ReturnType<typeof decodeTransactionFromRpcResponse>['compiledMessage'],
+            { version: 1 }
+        >;
+
+        expect(v1.configMask).toBe(0b0111);
+        expect(v1.configValues).toStrictEqual([
+            { kind: 'u64', value: 0n },
+            { kind: 'u32', value: 0 },
+        ]);
+    });
+
     it('throws SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED for an unknown JSON transaction version', () => {
         const rpcTx = {
             meta: null,
